@@ -6,7 +6,7 @@ from airflow.hooks.base_hook import BaseHook
 from airflow.operators.python_operator import PythonOperator
 
 LOCAL_DIR = os.path.dirname(os.path.abspath(__file__))
-conn = BaseHook.get_connection('name_of_airflow_connection')
+conn = BaseHook.get_connection("redshift_etl")
 cx_str = 'postgresql://{db_user}:{db_pass}@{host}:{port}/{db}'.format(db_user=conn.login,
                                                                       db_pass=conn.get_password(),
                                                                       host=conn.host,
@@ -44,7 +44,7 @@ def assert_no_nulls(schema, table, subset=None):
     if len(problem_cols) == 0:
         print('Success! All columns are non-null: {}'.format(', '.join(subset)))
     else:
-        raise AirflowException('Uh-oh! These columns have null values: {}'.format(', '.join(problem_cols)))
+        raise AirflowException('Uh-oh! These columns have null value_col: {}'.format(', '.join(problem_cols)))
 
 
 def assert_unique_values(schema, table, subset=None):
@@ -84,12 +84,19 @@ def run_checks(schema, table, no_nulls=False, unique_rows=False, unique_subset=F
         assert_unique_values(schema, table, subset=unique_subset)
 
 
-def throw_airflow_exception():
-    raise AirflowException('INTENTIONAL FAIL')
+class RedshiftTableConstraintOperator(PythonOperator):
+    """ Check uniqueness and null-value constraints against columns in a single table in Amazon Redshift.
 
+    Add upstream of a task to validate your assumptions about incoming data sources,
+    or downstream of a task to sanity-check your processing logic and catch potential bugs.
 
-class DataQualityOperator(PythonOperator):
-    """ """
+    Args:
+        schema (str): File path or query text containing jinja2 variables to be filled by airflow templating engine.
+        table (str): Access final sql text from inside using kwargs['templates_dict']['query']
+        no_nulls (list, bool): A list of columns which should not contain nulls, or a value of True to indicate all columns.
+        unique_rows (bool): If True, each row of the table should be unique.
+        unique_subset (list, bool): A list of a subset of columns, within which rows should be unique.
+    """
 
     ui_color = "#4c8244"
     ui_fgcolor = "#fff"
@@ -103,7 +110,7 @@ class DataQualityOperator(PythonOperator):
         self.templates_dict = None
 
 
-# example_task = DataQualityOperator(
+# example_task = RedshiftTableConstraintOperator(
 #     task_id='example_task',
 #     schema='superb_schema',
 #     table='terrific_table',
