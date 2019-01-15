@@ -1,9 +1,6 @@
 import os
 from datetime import datetime, timedelta
 
-DAG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dag_datasci_enriched_bookings')
-print('DAG DIR: {}'.format(DAG_DIR))
-
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 filename = os.path.splitext(os.path.basename(__file__))[0]
