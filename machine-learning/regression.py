@@ -37,6 +37,11 @@ def plot_corr_triangle(df: pd.DataFrame):
 def check_assumptions_for_linear_model(X: pd.DataFrame) -> pd.DataFrame:
     """ Asserts that a DataFrame has no null values or infinite values. """
 
+    disallowed_dtypes = ['datetime', 'object']
+    for dtype in disallowed_dtypes:
+        disallowed_columns = X.select_dtypes(dtype).columns
+        assert len(disallowed_columns) == 0, f'Columns of dtype {dtype}: {", ".join(disallowed_columns)}'
+        
     cols_with_inf_values = X.apply(np.isinf).any().loc[lambda x: x == True].index
     assert len(cols_with_inf_values) == 0, 'Columns with infinite values:' + '\n\t' + '\n\t'.join(cols_with_inf_values)
     print('[✔] No columns with infinite values')
