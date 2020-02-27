@@ -18,7 +18,8 @@ CREATE TEMP TABLE stg_final AS (
 /* INCREMENTAL DELETE */
 DELETE FROM {{ params.schema_name }}.{{ params.table_name}}
 WHERE ts >= '{{ ds }}'
-  AND ts < DATE('{{ ds }}') + interval '1 day';
+  AND ts < '{{ next_ds }}'
+;
 
 
 /* INREMENTAL LOAD */
